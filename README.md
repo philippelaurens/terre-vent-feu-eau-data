@@ -75,17 +75,13 @@ The data pipeline follows a `raw` > `clean` > `processed` structure<br>
 
 ### 5b. Machine Learning & MLflow Tracking : branch v1_p + main
 *   **`notebooks/xgboost/xgboost past.ipynb`**
-    *   **Input**: 
-    *   Features : `commune_jour` and `v_commune_paca` views from the database
+    *   Features Engineering : `commune_jour` and `v_commune_paca` views from the database
         *   Spatial / Densité / Relief : `densite`, `superficie_hectare`, `altitude_moyenne`, `amplitude_altitude`
         *   Saisonnalité & Temporel : `jour_semaine`, `sin_jour_annee`, `cos_jour_annee`, `saison_automne`, `saison_ete`, `saison_hiver`,`saison_printemps`
         *   Historique & Buffers : `nb_incendies_30j`, `nb_incendies_90j`, `nb_incendies_365j`, `surface_totale_5a`, `buffer_10km`, `buffer_20km`, `buffer_50km`
-    *   Features : Score functions (histo and topo)
-
-# Scores : `score_histo`, `score_topo`
-    *   **Output**: Trained ML models (XGBoost) and evaluation metrics
-    *   **Details**: 
-        *   
+        *   Score functions (histo and topo)
+    *   Training and Evaluations.
+    *   Saving the model to the Streamlit app directory, and rebuilding the Docker image to include the model
 
 ### 5b. Application Streamlit : branch v1_p + main
     *   Application (Front-End) : `app/streamlit/app.py`**
@@ -100,14 +96,6 @@ The `Prediction_Risque_Incendies` experiment logs all model parameters, dataset 
 *   **Meteorological Data**: Integrate external climate data (wind, drought indices) to overcome the current predictive ceiling (PR-AUC limitations) and capture immediate fire triggers
 
 
------
------
------
------
-
-
------
------
 -----
 -----
 
