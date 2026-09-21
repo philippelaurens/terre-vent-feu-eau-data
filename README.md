@@ -24,7 +24,7 @@ The data pipeline follows a `raw` > `clean` > `processed` structure<br>
 
 
 
-### 1. Data Import & Cleaning
+### 1. Data Import from CSV to MySQL & Cleaning
 *   **`notebooks/csv2mysql/incendies-database.ipynb`**
     *   Incendies **Input** - Official BDIFF datasets (`data/bdiff_data_raw/Incendies*.csv`) : https://bdiff.agriculture.gouv.fr/incendies
     *   Commues **Input** - INSEE municipalities list (`data/geo_data_raw/communes-france-2026.csv`) : https://www.data.gouv.fr/datasets/liste-des-communes-de-france-code-insee-codes-postaux-epci-population-superficie-62-indicateurs
@@ -33,6 +33,10 @@ The data pipeline follows a `raw` > `clean` > `processed` structure<br>
         *   Create tables linked to commune : localisation, region, departement, commune + cleaning then data + indexes
         *   Create tables linked to incendie : precision_surface, type_peuplement, nature + cleaning then data + indexes
         *   Create tables linked to cluster : type_cluster, cluster + data
+
+### 2. Dump MySQL and Postgres Database Creation (legacy): 
+    ** ss
+01-schema.sql  02-tables.sql  03-data.sql
 
 ### 3. Database Initialization
 *   **`init/01-schema.sql`, `02-ddl.sql`, `03-data.sql`**
