@@ -28,14 +28,13 @@ The data pipeline follows a `raw` > `clean` > `processed` structure<br>
 *   **`notebooks/csv2mysql/incendies-database.ipynb`**
     *   Incendies **Input** - Official BDIFF datasets (`data/bdiff_data_raw/Incendies*.csv`) : https://bdiff.agriculture.gouv.fr/incendies
     *   Commues **Input** - INSEE municipalities list (`data/geo_data_raw/communes-france-2026.csv`) : https://www.data.gouv.fr/datasets/liste-des-communes-de-france-code-insee-codes-postaux-epci-population-superficie-62-indicateurs
-*   **`notebooks/prep_communes.ipynb`**
     *   **Details**: 
         *   import from csv to MySQL MyISAM tmp tables (tmp_incendie and tmp_commune) + indexes creation
-        *   Create tables linked to commune : localisation, region, departement, commune + data + indexes
-        *   Create tables linked to incendie : precision_surface, type_peuplement, nature
-        *   Create tables linked to cluster : type_cluster, cluster
+        *   Create tables linked to commune : localisation, region, departement, commune + cleaning then data + indexes
+        *   Create tables linked to incendie : precision_surface, type_peuplement, nature + cleaning then data + indexes
+        *   Create tables linked to cluster : type_cluster, cluster + data
 
-### 2. Database Initialization
+### 3. Database Initialization
 *   **`init/01-schema.sql`, `02-ddl.sql`, `03-data.sql`**
     *   **Input**: Cleaned Parquet datasets
     *   **Output**: Containerized `postgis:17-3.5` database with the `incendies` schema and imported tables.
