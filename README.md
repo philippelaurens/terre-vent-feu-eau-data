@@ -37,21 +37,9 @@ The data pipeline follows a `raw` > `clean` > `processed` structure<br>
 ### 2. Dump MySQL and Postgres Database Creation (legacy): 
 *   MySQL Dump : ddl + data
     *   SQL code transformation (MySQL -> Postgres)
+    *   Creating a Docker Compose file for setting up two linked services (PostGIS + Streamlit), along with well-structured initialization files within an init directory (01-schema.sql, 02-tables.sql, 03-data.sql)
 
 
-          ├── app
-          │   └── streamlit
-          │       ├── app.py
-          │       ├── Dockerfile
-          │       ├── popups.py
-          │       └── requirements.txt
-          ├── docker-compose.yml
-          └── init
-              ├── 01-schema.sql
-              ├── 02-tables.sql
-              └── 03-data.sql
-              
-01-schema.sql  02-tables.sql  03-data.sql
 
 ### 3. Database Initialization
 *   **`init/01-schema.sql`, `02-ddl.sql`, `03-data.sql`**
