@@ -26,8 +26,8 @@ The data pipeline follows a `raw` > `clean` > `processed` structure<br>
 
 ### 1. Data Import & Cleaning
 *   **`notebooks/csv2mysql/incendies-database.ipynb`**
-    *   Incendies Input** - Official BDIFF datasets (`data/bdiff_data_raw/Incendies*.csv`) : https://bdiff.agriculture.gouv.fr/incendies
-    *   Commues : Input** - INSEE municipalities list (`data/geo_data_raw/communes-france-2026.csv`) : https://www.data.gouv.fr/datasets/liste-des-communes-de-france-code-insee-codes-postaux-epci-population-superficie-62-indicateurs
+    *   Incendies **Input** - Official BDIFF datasets (`data/bdiff_data_raw/Incendies*.csv`) : https://bdiff.agriculture.gouv.fr/incendies
+    *   Commues **Input** - INSEE municipalities list (`data/geo_data_raw/communes-france-2026.csv`) : https://www.data.gouv.fr/datasets/liste-des-communes-de-france-code-insee-codes-postaux-epci-population-superficie-62-indicateurs
 *   **`notebooks/prep_communes.ipynb`**
     *   **Output**: Cleaned cities dataset (`data/geo_data_clean/communes_metropole_corse.parquet`).
 
