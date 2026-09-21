@@ -39,7 +39,13 @@ The data pipeline follows a `raw` > `clean` > `processed` structure<br>
     *   SQL code transformation (MySQL -> Postgres)
     *   Creating a Docker Compose file for setting up two linked services (PostGIS + Streamlit), along with well-structured initialization files within an init directory (01-schema.sql, 02-tables.sql, 03-data.sql)
 
-
+### 3. Data Import from CSV to MySQL & Cleaning
+*   **`notebooks/dbscan/dbscan_final.ipynb`**
+    *   Geographic clustering for all commune
+        *   Addition of the PostGIS extension
+        *   Use of the DBSCAN algorithm to determine the optimal values for eps and min_samples using silhouette_score and davies_bouldin_score metrics
+        * Visualization of clusters for each region
+        * insertion of generated clusters (by location / by municipalities with fires) into the cluster table (with tracking in an experiment table: no MLflow implemented at this stage)
 
 ### 3. Database Initialization
 *   **`init/01-schema.sql`, `02-ddl.sql`, `03-data.sql`**
