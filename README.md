@@ -36,20 +36,28 @@ The data pipeline follows a `raw` > `clean` > `processed` structure<br>
 
 ### 2. Dump MySQL and Postgres Database Creation (legacy): 
 *   MySQL Dump : ddl + data
-    *   SQL code transformation (MySQL -> Postgres)
-    *   Creating a Docker Compose file for setting up two linked services (PostGIS + Streamlit), along with well-structured initialization files within an init directory (01-schema.sql, 02-tables.sql, 03-data.sql)
+    *   **Input**: MySQL
+        *   SQL code transformation (MySQL -> Postgres)
+        *   Creating a Docker Compose file for setting up two linked services (PostGIS + Streamlit), along with well-structured initialization files within an init directory (01-schema.sql, 02-tables.sql, 03-data.sql)
+    *   **Output**: Containerized `postgis:17-3.5` database with the `incendies` schema and imported tables.
 
-### 3. Geographic clustering for all commune
+### 3. Geographic clustering for all commune (unused): 
 *   **`notebooks/dbscan/dbscan_final.ipynb`**
     *   Addition of the PostGIS extension
     *   Use of the DBSCAN algorithm to determine the optimal values for eps and min_samples using silhouette_score and davies_bouldin_score metrics
     * Visualization of clusters for each region
     * insertion of generated clusters (by location / by municipalities with fires) into the cluster table (with tracking in an experiment table: no MLflow implemented at this stage)
 
-### 3. Database Initialization
-*   **`init/01-schema.sql`, `02-ddl.sql`, `03-data.sql`**
-    *   **Input**: Cleaned Parquet datasets
-    *   **Output**: Containerized `postgis:17-3.5` database with the `incendies` schema and imported tables.
+### 4. Database Ré-Initialization
+*   **`notebooks/xgboost/table_c_j past.ipynb`**
+    *   Creation of the commune_jour table (feature table)
+    *   Database export: 
+        *   Schema creation (01-schema.sql)
+        *   DDL creation (02-ddl.sql)
+        *   data insert (03-data.sql)
+    *   Notebook-based update of feature fields: 
+        *   target has_fire, 
+        *   features nb_incendies_30j, nb_incendies_90j, nb_incendies_365j, surface_totale_5a, buffer_10km, buffer_20km, buffer_50km
 
 ### 3. Spatio-Temporal Grid & Feature Engineering
 *   **`notebooks/table_c_j.ipynb`**
