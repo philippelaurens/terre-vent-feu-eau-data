@@ -35,7 +35,22 @@ The data pipeline follows a `raw` > `clean` > `processed` structure<br>
         *   Create tables linked to cluster : type_cluster, cluster + data
 
 ### 2. Dump MySQL and Postgres Database Creation (legacy): 
-    ** ss
+*   MySQL Dump : ddl + data
+    *   SQL code transformation (MySQL -> Postgres)
+
+
+          ├── app
+          │   └── streamlit
+          │       ├── app.py
+          │       ├── Dockerfile
+          │       ├── popups.py
+          │       └── requirements.txt
+          ├── docker-compose.yml
+          └── init
+              ├── 01-schema.sql
+              ├── 02-tables.sql
+              └── 03-data.sql
+              
 01-schema.sql  02-tables.sql  03-data.sql
 
 ### 3. Database Initialization
