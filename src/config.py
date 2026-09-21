@@ -36,7 +36,7 @@ load_dotenv(ROOT_DIR / ".env")
 
 # Paramètres PostgreSQL / PostGIS
 HOST = os.getenv("POSTGRES_HOST")
-PORT = int(os.getenv("POSTGRES_PORT"))
+PORT = os.getenv("POSTGRES_PORT")
 USER = os.getenv("POSTGRES_USER")
 PASSWORD = os.getenv("POSTGRES_PASSWORD")
 NAME = os.getenv("POSTGRES_DB", "incendies")
@@ -125,5 +125,3 @@ def add_map_title(map_object, title):
     """Add a title to a folium map object."""
     title_html = MAP_TITLE_TEMPLATE.format(title=title)
     map_object.get_root().html.add_child(folium.Element(title_html))
-
-print(AVAILABLE_YEARS)

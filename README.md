@@ -29,8 +29,11 @@ The data pipeline follows a `raw` > `clean` > `processed` structure<br>
     *   Incendies **Input** - Official BDIFF datasets (`data/bdiff_data_raw/Incendies*.csv`) : https://bdiff.agriculture.gouv.fr/incendies
     *   Commues **Input** - INSEE municipalities list (`data/geo_data_raw/communes-france-2026.csv`) : https://www.data.gouv.fr/datasets/liste-des-communes-de-france-code-insee-codes-postaux-epci-population-superficie-62-indicateurs
 *   **`notebooks/prep_communes.ipynb`**
-    *   **Details**: import to tmp tables (tmp_incendie and tmp_commune)
-        *   dddd
+    *   **Details**: 
+        *   import from csv to MySQL MyISAM tmp tables (tmp_incendie and tmp_commune) + indexes creation
+        *   Create tables linked to commune : localisation, region, departement, commune + data + indexes
+        *   Create tables linked to incendie : precision_surface, type_peuplement, nature
+        *   Create tables linked to cluster : type_cluster, cluster
 
 ### 2. Database Initialization
 *   **`init/01-schema.sql`, `02-ddl.sql`, `03-data.sql`**
