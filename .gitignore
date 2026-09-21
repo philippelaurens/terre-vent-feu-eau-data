@@ -8,7 +8,7 @@ __pycache__/
 
 
 # Données locales volumineuses
-# data/
+data/
 
 # Fichiers générés temporaires ou rapports web
 *.html
@@ -17,7 +17,19 @@ __pycache__/
 
 # Fichiers systèmes (Windows / macOS)
 .DS_Store
+Thumbs.db
 
 # Fichiers environment
 .env
 .vscode
+
+
+
+mlruns/
+notebooks/mlruns/
+*.db
+
+
+consignes/
+# dossier des test et essais divers
+temp/
