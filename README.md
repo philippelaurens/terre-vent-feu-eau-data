@@ -48,35 +48,40 @@ The data pipeline follows a `raw` > `clean` > `processed` structure<br>
     * Visualization of clusters for each region
     * insertion of generated clusters (by location / by municipalities with fires) into the cluster table (with tracking in an experiment table: no MLflow implemented at this stage)
 
-### 4. Database Ré-Initialization
+### 4. Database Ré-Initialization : Spatio-Temporal Grid & Feature Engineering
 *   **`notebooks/xgboost/table_c_j past.ipynb`**
-    *   Creation of the commune_jour table (feature table)
+    *   Creation of the commune_jour table (feature table) : Base daily grid `commune_jour` (PACA region, 2016-2025)
     *   Database export: 
         *   Schema creation (01-schema.sql)
         *   DDL creation (02-ddl.sql)
         *   data insert (03-data.sql)
     *   Notebook-based update of feature fields: 
         *   target has_fire, 
-        *   features nb_incendies_30j, nb_incendies_90j, nb_incendies_365j, surface_totale_5a, buffer_10km, buffer_20km, buffer_50km
+        *   features (Note: Strictly uses past data to prevent data leakage*)
+            *   `nb_incendies_30j`, `nb_incendies_90j`, `nb_incendies_365j`
+            *   `surface_totale_5a`, 
+            *   `buffer_10km`, `buffer_20km`, `buffer_50km` + materialized views (`mv_communes_voisines_10km`, `mv_communes_voisines_20km`, `mv_communes_voisines_50km`)
 
-### 3. Spatio-Temporal Grid & Feature Engineering
-*   **`notebooks/table_c_j.ipynb`**
-    *   **Input**: `commune` and `incendie` PostgreSQL tables
-    *   **Output**: Base daily grid `commune_jour` (PACA region, 2016-2025) and materialized views for spatial neighbors (`mv_communes_voisines_10km`, `20km`, `50km`)
-*   **`scripts/maj.py`**
-    *   **Input**: `commune_jour` table and materialized views
-    *   **Output**: Updates the daily grid with causal historical features (`nb_incendies_30j`, `90j`, `365j`, `surface_totale_5a`) and spatial contagion buffers (`buffer_10km`, `20km`, `50km`). *Note: Strictly uses past data to prevent data leakage*
-
-### 4. Machine Learning & MLflow Tracking
+### 5a. Machine Learning & MLflow Tracking : branch v1_b
 *   **`notebooks/model_daily.ipynb`**
     *   **Input**: `commune_jour` and `v_commune_paca` views from the database
     *   **Output**: Trained ML models (LightGBM, XGBoost) and evaluation metrics
     *   **Details**: Uses a strict spatio-temporal split (Train: 2016-2022, Val: 2023, Test: 2024+) and 1:10 downsampling for the negative class during Grid Search All runs are logged locally in `mlflow.db` under the `Prediction_Risque_Incendies` experiment
 
-### 5. Application (Front-End)
-*   **`app/streamlit/app.py`**
+### 5a. Application Streamlit : branch v1_b
+    *   Application (Front-End) : `app/streamlit/app.py`**
     *   **Input**: PostgreSQL database (Historical Map) & MLflow Model Registry (Prediction).
     *   **Output**: Interactive Streamlit Dashboard exposing fire risk predictions (Tab 2).
+
+### 5b. Machine Learning & MLflow Tracking : branch v1_p + main
+*   **`notebooks/model_daily.ipynb`**
+    *   **Input**: `commune_jour` and `v_commune_paca` views from the database
+    *   **Output**: Trained ML models (LightGBM, XGBoost) and evaluation metrics
+    *   **Details**: Uses a strict spatio-temporal split (Train: 2016-2022, Val: 2023, Test: 2024+) and 1:10 downsampling for the negative class during Grid Search All runs are logged locally in `mlflow.db` under the `Prediction_Risque_Incendies` experiment
+
+### 5b. Application Streamlit : branch v1_p + main
+    *   Application (Front-End) : `app/streamlit/app.py`**
+    *   Interactive Streamlit Dashboard exposing fire risk predictions (Tab 2).
 
 ## MLflow Tracking
 The MLflow UI is accessible at [http://127.0.0.1:5000](http://127.0.0.1:5000).
