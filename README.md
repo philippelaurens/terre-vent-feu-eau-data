@@ -48,13 +48,13 @@ The data pipeline follows a `raw` > `clean` > `processed` structure<br>
     * Visualization of clusters for each region
     * insertion of generated clusters (by location / by municipalities with fires) into the cluster table (with tracking in an experiment table: no MLflow implemented at this stage)
 
-### 4. Database Ré-Initialization : Spatio-Temporal Grid & Feature Engineering
+### 4. Database Re-Initialization : Spatio-Temporal Grid & Feature Engineering
 *   **`notebooks/xgboost/table_c_j past.ipynb`**
     *   Creation of the commune_jour table (feature table) : Base daily grid `commune_jour` (PACA region, 2016-2025)
     *   Database export: 
-        *   Schema creation (01-schema.sql)
-        *   DDL creation (02-ddl.sql)
-        *   data insert (03-data.sql)
+        *   Schema creation : `01-schema.sql`
+        *   DDL creation : `02-ddl.sql`
+        *   data insert : `03-data.sql`
     *   Notebook-based update of feature fields: 
         *   target has_fire, 
         *   features (Note: Strictly uses past data to prevent data leakage*)
@@ -74,10 +74,17 @@ The data pipeline follows a `raw` > `clean` > `processed` structure<br>
     *   **Output**: Interactive Streamlit Dashboard exposing fire risk predictions (Tab 2).
 
 ### 5b. Machine Learning & MLflow Tracking : branch v1_p + main
-*   **`notebooks/model_daily.ipynb`**
+*   **`notebooks/xgboost/xgboost past.ipynb`**
     *   **Input**: `commune_jour` and `v_commune_paca` views from the database
-    *   **Output**: Trained ML models (LightGBM, XGBoost) and evaluation metrics
-    *   **Details**: Uses a strict spatio-temporal split (Train: 2016-2022, Val: 2023, Test: 2024+) and 1:10 downsampling for the negative class during Grid Search All runs are logged locally in `mlflow.db` under the `Prediction_Risque_Incendies` experiment
+        *   Features :
+            *   Spatial / Densité / Relief : `densite`, `superficie_hectare`, `altitude_moyenne`, `amplitude_altitude`
+            *   Saisonnalité & Temporel : `jour_semaine`, `sin_jour_annee`, `cos_jour_annee`, `saison_automne`, `saison_ete`, `saison_hiver`,`saison_printemps`
+            *   Historique & Buffers : `nb_incendies_30j`, `nb_incendies_90j`, `nb_incendies_365j`, `surface_totale_5a`, `buffer_10km`, `buffer_20km`, `buffer_50km`
+
+# Scores : `score_histo`, `score_topo`
+    *   **Output**: Trained ML models (XGBoost) and evaluation metrics
+    *   **Details**: 
+        *   
 
 ### 5b. Application Streamlit : branch v1_p + main
     *   Application (Front-End) : `app/streamlit/app.py`**
