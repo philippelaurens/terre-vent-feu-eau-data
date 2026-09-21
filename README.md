@@ -75,11 +75,12 @@ The data pipeline follows a `raw` > `clean` > `processed` structure<br>
 
 ### 5b. Machine Learning & MLflow Tracking : branch v1_p + main
 *   **`notebooks/xgboost/xgboost past.ipynb`**
-    *   **Input**: `commune_jour` and `v_commune_paca` views from the database
-        *   Features :
-            *   Spatial / Densité / Relief : `densite`, `superficie_hectare`, `altitude_moyenne`, `amplitude_altitude`
-            *   Saisonnalité & Temporel : `jour_semaine`, `sin_jour_annee`, `cos_jour_annee`, `saison_automne`, `saison_ete`, `saison_hiver`,`saison_printemps`
-            *   Historique & Buffers : `nb_incendies_30j`, `nb_incendies_90j`, `nb_incendies_365j`, `surface_totale_5a`, `buffer_10km`, `buffer_20km`, `buffer_50km`
+    *   **Input**: 
+    *   Features : `commune_jour` and `v_commune_paca` views from the database
+        *   Spatial / Densité / Relief : `densite`, `superficie_hectare`, `altitude_moyenne`, `amplitude_altitude`
+        *   Saisonnalité & Temporel : `jour_semaine`, `sin_jour_annee`, `cos_jour_annee`, `saison_automne`, `saison_ete`, `saison_hiver`,`saison_printemps`
+        *   Historique & Buffers : `nb_incendies_30j`, `nb_incendies_90j`, `nb_incendies_365j`, `surface_totale_5a`, `buffer_10km`, `buffer_20km`, `buffer_50km`
+    *   Features : Score functions (histo and topo)
 
 # Scores : `score_histo`, `score_topo`
     *   **Output**: Trained ML models (XGBoost) and evaluation metrics
