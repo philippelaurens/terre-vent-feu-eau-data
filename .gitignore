@@ -7,9 +7,6 @@ __pycache__/
 *$py.class
 
 
-# Données locales volumineuses
-data/
-
 # Fichiers générés temporaires ou rapports web
 *.html
 *.img
