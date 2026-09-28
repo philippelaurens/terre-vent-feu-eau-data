@@ -9,5 +9,5 @@ STEPS = {
     "04a_update_buffer_10km.sql": {"enabled": 0, "mode": "by_day"},
     "04b_update_buffer_20km.sql": {"enabled": 0, "mode": "by_day"},
     "04c_update_buffer_50km.sql": {"enabled": 0, "mode": "by_day"},
-    "04d_update_surface_50km.sql": {"enabled": 1, "mode": "by_day"},
+    "04d_update_surface_50km.sql": {"enabled": 0, "mode": "by_day"},
 }
