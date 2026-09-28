@@ -3,7 +3,7 @@ SET search_path TO incendies, public;
 --
 -- Name: tmp_commune; Type: TABLE; Schema: incendies; Owner: -
 --
-CREATE TABLE incendies.tmp_commune (
+CREATE TABLE tmp_commune (
     code_insee character varying(10) NOT NULL,
     nom_standard character varying(100) NOT NULL,
     nom_sans_pronom character varying(100) NOT NULL,
@@ -51,14 +51,14 @@ CREATE TABLE incendies.tmp_commune (
     url_wikipedia character varying(255),
     url_villedereve character varying(255) NOT NULL
 );
-CREATE INDEX idx_tmp_commune_code_insee ON incendies.tmp_commune USING btree (code_insee);
-CREATE INDEX idx_tmp_commune_latitude_mairie ON incendies.tmp_commune USING btree (latitude_mairie);
-CREATE INDEX idx_tmp_commune_longitude_mairie ON incendies.tmp_commune USING btree (longitude_mairie);
+CREATE INDEX idx_tmp_commune_code_insee ON tmp_commune USING btree (code_insee);
+CREATE INDEX idx_tmp_commune_latitude_mairie ON tmp_commune USING btree (latitude_mairie);
+CREATE INDEX idx_tmp_commune_longitude_mairie ON tmp_commune USING btree (longitude_mairie);
 
 --
 -- Name: tmp_incendie; Type: TABLE; Schema: incendies; Owner: -
 --
-CREATE TABLE incendies.tmp_incendie (
+CREATE TABLE tmp_incendie (
     annee integer NOT NULL,
     numero integer NOT NULL,
     departement character varying(10) NOT NULL,
@@ -84,10 +84,10 @@ CREATE TABLE incendies.tmp_incendie (
     nombre_batiments_partiellement_detruits smallint,
     precision_donnee character varying(200)
 );
-CREATE INDEX idx_tmp_incendie_insee ON incendies.tmp_incendie USING btree (insee);
-CREATE INDEX idx_tmp_incendie_nature ON incendies.tmp_incendie USING btree (nature);
-CREATE INDEX idx_tmp_incendie_precision_surfaces ON incendies.tmp_incendie USING btree (precision_surfaces);
-CREATE INDEX idx_tmp_incendie_type_peuplement ON incendies.tmp_incendie USING btree (type_peuplement);
+CREATE INDEX idx_tmp_incendie_insee ON tmp_incendie USING btree (insee);
+CREATE INDEX idx_tmp_incendie_nature ON tmp_incendie USING btree (nature);
+CREATE INDEX idx_tmp_incendie_precision_surfaces ON tmp_incendie USING btree (precision_surfaces);
+CREATE INDEX idx_tmp_incendie_type_peuplement ON tmp_incendie USING btree (type_peuplement);
 
 
 -------------------------------------------------------------------
@@ -97,42 +97,30 @@ CREATE INDEX idx_tmp_incendie_type_peuplement ON incendies.tmp_incendie USING bt
 --
 -- Name: localisation; Type: TABLE; Schema: incendies; Owner: -
 --
-CREATE TABLE incendies.localisation (
+CREATE TABLE localisation (
     id_localisation serial PRIMARY KEY,
     longitude numeric(9,6) NOT NULL,
     latitude numeric(9,6) NOT NULL,
-    geom incendies.geometry(Point,4326) GENERATED ALWAYS AS (
-        incendies.st_setsrid(incendies.st_makepoint((longitude)::double precision, (latitude)::double precision), 4326)
+    geom geometry(Point,4326) GENERATED ALWAYS AS (
+        st_setsrid(st_makepoint((longitude)::double precision, (latitude)::double precision), 4326)
     ) STORED,
-    geom_m incendies.geometry(Point,2154) GENERATED ALWAYS AS (
-        incendies.st_transform(
-            incendies.st_setsrid(incendies.st_makepoint((longitude)::double precision, (latitude)::double precision), 4326), 
+    geom_m geometry(Point,2154) GENERATED ALWAYS AS (
+        st_transform(
+            st_setsrid(st_makepoint((longitude)::double precision, (latitude)::double precision), 4326), 
             2154
         )
     ) STORED
 );
-CREATE INDEX idx_localisation_latitude ON incendies.localisation USING btree (latitude);
-CREATE INDEX idx_localisation_longitude ON incendies.localisation USING btree (longitude);
-CREATE INDEX localisation_geom_gix ON incendies.localisation USING gist (geom);
-CREATE INDEX localisation_geom_m_gix ON incendies.localisation USING gist (geom_m);
+CREATE INDEX idx_localisation_latitude ON localisation USING btree (latitude);
+CREATE INDEX idx_localisation_longitude ON localisation USING btree (longitude);
+CREATE INDEX localisation_geom_gix ON localisation USING gist (geom);
+CREATE INDEX localisation_geom_m_gix ON localisation USING gist (geom_m);
 
 
---
--- Name: experiment; Type: TABLE; Schema: incendies; Owner: -
---
-CREATE TABLE incendies.experiment (
-    id serial PRIMARY KEY,
-    date_experiment timestamp without time zone NOT NULL,
-    type_cluster smallint NOT NULL REFERENCES incendies.type_cluster(id),
-    region smallint NOT NULL REFERENCES incendies.region(id),
-    eps real,
-    min_samples integer,
-    CONSTRAINT uq_experiment UNIQUE (date_experiment, type_cluster, region)
-);
 --
 -- Name: type_cluster; Type: TABLE; Schema: incendies; Owner: -
 --
-CREATE TABLE incendies.type_cluster (
+CREATE TABLE type_cluster (
     id smallserial PRIMARY KEY,
     nom character varying(32)
 );
@@ -140,14 +128,14 @@ CREATE TABLE incendies.type_cluster (
 --
 -- Name: cluster; Type: TABLE; Schema: incendies; Owner: -
 --
-CREATE TABLE incendies.cluster (
+CREATE TABLE cluster (
 	id_localisation int4 NOT NULL,
 	date_experiment timestamp NOT NULL,
 	cluster_id varchar(50) NOT NULL,
 	type_cluster int2 NOT NULL,
 	CONSTRAINT cluster_pkey PRIMARY KEY (id_localisation, date_experiment),
-	CONSTRAINT fk_cluster_id_localisation FOREIGN KEY (id_localisation) REFERENCES incendies.localisation(id_localisation),
-	CONSTRAINT fk_cluster_type_cluster FOREIGN KEY (type_cluster) REFERENCES incendies.type_cluster(id)
+	CONSTRAINT fk_cluster_id_localisation FOREIGN KEY (id_localisation) REFERENCES localisation(id_localisation),
+	CONSTRAINT fk_cluster_type_cluster FOREIGN KEY (type_cluster) REFERENCES type_cluster(id)
 );
 
 
@@ -158,7 +146,7 @@ CREATE TABLE incendies.cluster (
 --
 -- Name: region; Type: TABLE; Schema: incendies; Owner: -
 --
-CREATE TABLE incendies.region (
+CREATE TABLE region (
     id smallserial PRIMARY KEY,
     code smallint,
     nom character varying(32)
@@ -167,7 +155,7 @@ CREATE TABLE incendies.region (
 --
 -- Name: departement; Type: TABLE; Schema: incendies; Owner: -
 --
-CREATE TABLE incendies.departement (
+CREATE TABLE departement (
     code character varying(10) PRIMARY KEY,
     nom character varying(100)
 );
@@ -175,13 +163,13 @@ CREATE TABLE incendies.departement (
 --
 -- Name: commune; Type: TABLE; Schema: incendies; Owner: -
 --
-CREATE TABLE incendies.commune (
+CREATE TABLE commune (
     id_commune serial PRIMARY KEY,
     code_insee character varying(10),
-    localisation integer NOT NULL REFERENCES incendies.localisation(id_localisation),
+    localisation integer NOT NULL REFERENCES localisation(id_localisation),
     nom_standard character varying(100),
-    region smallint NOT NULL REFERENCES incendies.region(id),
-    departement character varying(10) REFERENCES incendies.departement(code),
+    region smallint NOT NULL REFERENCES region(id),
+    departement character varying(10) REFERENCES departement(code),
     population integer,
     superficie_hectare integer,
     densite numeric(10,2),
@@ -189,9 +177,22 @@ CREATE TABLE incendies.commune (
     altitude_minimale smallint,
     altitude_maximale smallint
 );
-CREATE INDEX fk_commune_localisation ON incendies.commune USING btree (localisation);
-CREATE INDEX fk_commune_region ON incendies.commune USING btree (region);
-CREATE INDEX fk_commune_departement ON incendies.commune USING btree (departement);
+CREATE INDEX fk_commune_localisation ON commune USING btree (localisation);
+CREATE INDEX fk_commune_region ON commune USING btree (region);
+CREATE INDEX fk_commune_departement ON commune USING btree (departement);
+
+--
+-- Name: experiment; Type: TABLE; Schema: incendies; Owner: -
+--
+CREATE TABLE experiment (
+    id serial PRIMARY KEY,
+    date_experiment timestamp without time zone NOT NULL,
+    type_cluster smallint NOT NULL REFERENCES type_cluster(id),
+    region smallint NOT NULL REFERENCES region(id),
+    eps real,
+    min_samples integer,
+    CONSTRAINT uq_experiment UNIQUE (date_experiment, type_cluster, region)
+);
 
 
 -------------------------------------------------------------------
@@ -201,7 +202,7 @@ CREATE INDEX fk_commune_departement ON incendies.commune USING btree (departemen
 --
 -- Name: precision_surface; Type: TABLE; Schema: incendies; Owner: -
 --
-CREATE TABLE incendies.precision_surface (
+CREATE TABLE precision_surface (
     id smallserial PRIMARY KEY,
     nom character varying(32)
 );
@@ -209,7 +210,7 @@ CREATE TABLE incendies.precision_surface (
 --
 -- Name: type_peuplement; Type: TABLE; Schema: incendies; Owner: -
 --
-CREATE TABLE incendies.type_peuplement (
+CREATE TABLE type_peuplement (
     id smallserial PRIMARY KEY,
     nom character varying(32)
 );
@@ -217,7 +218,7 @@ CREATE TABLE incendies.type_peuplement (
 --
 -- Name: nature; Type: TABLE; Schema: incendies; Owner: -
 --
-CREATE TABLE incendies.nature (
+CREATE TABLE nature (
     id smallserial PRIMARY KEY,
     nom character varying(32)
 );
@@ -225,9 +226,9 @@ CREATE TABLE incendies.nature (
 --
 -- Name: incendie; Type: TABLE; Schema: incendies; Owner: -
 --
-CREATE TABLE incendies.incendie (
+CREATE TABLE incendie (
     id_incendie serial PRIMARY KEY,
-    localisation integer NOT NULL REFERENCES incendies.localisation(id_localisation),
+    localisation integer NOT NULL REFERENCES localisation(id_localisation),
     code_insee character varying(10) NOT NULL,
     date_premiere_alerte timestamp without time zone NOT NULL,
     annee integer NOT NULL,
@@ -241,15 +242,15 @@ CREATE TABLE incendies.incendie (
     surfaces_non_boisees_naturelles integer,
     surfaces_non_boisees_artificialisees integer,
     surfaces_non_boisees integer,
-    precision_surface smallint NOT NULL REFERENCES incendies.precision_surface(id),
-    type_peuplement smallint NOT NULL REFERENCES incendies.type_peuplement(id),
-    nature smallint NOT NULL REFERENCES incendies.nature(id)
+    precision_surface smallint NOT NULL REFERENCES precision_surface(id),
+    type_peuplement smallint NOT NULL REFERENCES type_peuplement(id),
+    nature smallint NOT NULL REFERENCES nature(id)
 );
-CREATE INDEX idx_incendie_date_insee ON incendies.incendie USING btree (date_premiere_alerte, code_insee);
-CREATE INDEX fk_incendie_localisation ON incendies.incendie USING btree (localisation);
-CREATE INDEX fk_incendie_precision_surface ON incendies.incendie USING btree (precision_surface);
-CREATE INDEX fk_incendie_type_peuplement ON incendies.incendie USING btree (type_peuplement);
-CREATE INDEX fk_incendie_nature ON incendies.incendie USING btree (nature);
+CREATE INDEX idx_incendie_date_insee ON incendie USING btree (date_premiere_alerte, code_insee);
+CREATE INDEX fk_incendie_localisation ON incendie USING btree (localisation);
+CREATE INDEX fk_incendie_precision_surface ON incendie USING btree (precision_surface);
+CREATE INDEX fk_incendie_type_peuplement ON incendie USING btree (type_peuplement);
+CREATE INDEX fk_incendie_nature ON incendie USING btree (nature);
 
 
 -------------------------------------------------------------------
@@ -259,11 +260,11 @@ CREATE INDEX fk_incendie_nature ON incendies.incendie USING btree (nature);
 --
 -- Name: affecte; Type: TABLE; Schema: incendies; Owner: -
 --
-CREATE TABLE incendies.affecte (
-    id_commune integer NOT NULL REFERENCES incendies.commune(id_commune),
-    id_incendie integer NOT NULL REFERENCES incendies.incendie(id_incendie),
+CREATE TABLE affecte (
+    id_commune integer NOT NULL REFERENCES commune(id_commune),
+    id_incendie integer NOT NULL REFERENCES incendie(id_incendie),
     date_impact timestamp without time zone NOT NULL,
     degre_impact character varying(50),
     CONSTRAINT pk_affecte PRIMARY KEY (id_commune, id_incendie, date_impact)
 );
-CREATE INDEX idx_affecte_id_incendie ON incendies.affecte USING btree (id_incendie);
+CREATE INDEX idx_affecte_id_incendie ON affecte USING btree (id_incendie);
