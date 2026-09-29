@@ -1,0 +1,360 @@
+
+  o Création de la table commune_jour
+  
+    ddl = [
+        """
+        CREATE TABLE incendies.commune_jour (
+            id_commune int4 NOT NULL,
+            date_jour date NOT NULL,
+            has_fire int2 NULL,
+            nb_incendies_30j int4 NULL,
+            nb_incendies_90j int4 NULL,
+            nb_incendies_365j int4 NULL,
+            surface_totale_5a int4 NULL,
+            buffer_10km int4 NULL,
+            buffer_20km int4 NULL,
+            buffer_50km int4 NULL,
+        )
+        """
+    ]
+
+    with engine.begin() as conn:
+        conn.execute(text("SET search_path TO incendies, public"))
+        for stmt in ddl:
+            conn.execute(text(stmt))
+            conn.commit()
+
+
+    ddl = [
+        """
+        ALTER TABLE commune_jour
+        ADD CONSTRAINT pk_commune_jour PRIMARY KEY (id_commune, date_jour);
+        """
+    ]
+
+    with engine.begin() as conn:
+        conn.execute(text("SET search_path TO incendies, public"))
+        for stmt in ddl:
+            conn.execute(text(stmt))
+            conn.commit()
+
+
+
+                            - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+                            - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+
+  o Mise à jour de la table commune_jour (après import) 
+
+        sql = text("""
+            INSERT INTO commune_jour (id_commune, date_jour, has_fire)
+            SELECT 
+                c.id_commune,
+                d.jour::date,
+                0
+            FROM 
+                commune c
+            CROSS JOIN 
+                generate_series(
+                    '2016-01-01'::date, 
+                    '2025-12-31'::date, 
+                    '1 day'::interval
+                ) AS d(jour)
+            WHERE 
+                c.region = 17
+        """)
+
+        with engine.begin() as conn:
+            conn.execute(sql)
+
+        sql = text("""
+            UPDATE commune_jour cj
+            SET has_fire = 1
+            FROM incendie i
+            JOIN commune c ON c.code_insee = i.code_insee
+            WHERE cj.id_commune = c.id_commune 
+            AND c.region = 17
+            AND cj.date_jour = i.date_premiere_alerte::date;
+        """)
+
+        with engine.begin() as conn:
+            conn.execute(sql)
+
+    o Feature Engineering
+
+        # récupération des dates du jour
+        dates = pd.read_sql(
+            "SELECT DISTINCT date_jour FROM commune_jour ORDER BY date_jour",
+            engine,
+        )
+
+
+    -   Mise à jour de : nb_incendies_30j, nb_incendies_90j, nb_incendies_365j
+
+        ddl = [
+            """
+            CREATE INDEX IF NOT EXISTS idx_incendie_date_insee 
+                ON incendie (date_premiere_alerte, code_insee);
+
+            """
+        ]
+
+        with engine.connect() as conn:
+            conn.execute(text("SET search_path TO incendies, public"))
+            for stmt in ddl:
+                conn.execute(text(stmt))
+                conn.commit()
+
+        ddl = [
+            """
+            CREATE VIEW v_commune_paca AS
+            SELECT 
+                *
+            FROM commune
+            WHERE region = 17;
+            """
+        ]
+
+        with engine.connect() as conn:
+            conn.execute(text("SET search_path TO incendies, public"))
+            for stmt in ddl:
+                conn.execute(text(stmt))
+                conn.commit()
+
+        sql = text("""
+            WITH calcul_incendies AS (
+                SELECT
+                    c.id_commune,
+                    COUNT(*) FILTER (
+                        WHERE i.date_premiere_alerte::date >= :date_jour - INTERVAL '30 days'
+                    ) AS nb_30j,
+                    COUNT(*) FILTER (
+                        WHERE i.date_premiere_alerte::date >= :date_jour - INTERVAL '90 days'
+                    ) AS nb_90j,
+                    COUNT(*) AS nb_365j
+                FROM v_commune_paca c
+                JOIN incendie i ON i.code_insee = c.code_insee
+                    AND i.date_premiere_alerte::date >= :date_jour - INTERVAL '365 days'
+                    AND i.date_premiere_alerte::date < :date_jour 
+                GROUP BY c.id_commune
+            )
+            UPDATE commune_jour cj
+            SET 
+                nb_incendies_30j  = COALESCE(calc.nb_30j, 0),
+                nb_incendies_90j  = COALESCE(calc.nb_90j, 0),
+                nb_incendies_365j = COALESCE(calc.nb_365j, 0)
+            FROM v_commune_paca c
+            LEFT JOIN calcul_incendies calc ON c.id_commune = calc.id_commune
+            WHERE cj.id_commune = c.id_commune
+            AND cj.date_jour  = :date_jour;
+        """)
+
+        with engine.connect() as conn:
+            for jour in dates["date_jour"]:
+                conn.execute(sql, {"date_jour": jour})
+                conn.commit()
+
+
+    -   Mise à jour de la colonne surface_totale_5a 
+
+        sql = text("""
+            WITH date_bornes AS (
+                SELECT 
+                    CAST(:date_jour AS DATE) AS d_end,
+                    CAST(:date_jour AS DATE) - INTERVAL '1825 days' AS d_5a
+            ),
+            calcul_surface AS (
+                SELECT
+                    c.id_commune,
+                    SUM(i.surface_parcourue) AS surface_totale_5a
+                FROM date_bornes b
+                CROSS JOIN incendie i
+                JOIN v_commune_paca c ON i.code_insee = c.code_insee
+                WHERE i.date_premiere_alerte >= b.d_5a
+                AND i.date_premiere_alerte < b.d_end
+                GROUP BY c.id_commune
+            )
+            UPDATE commune_jour cj
+            SET surface_totale_5a = COALESCE(calc.surface_totale_5a, 0)
+            FROM v_commune_paca c
+            LEFT JOIN calcul_surface calc ON c.id_commune = calc.id_commune
+            WHERE cj.id_commune = c.id_commune
+            AND cj.date_jour  = :date_jour;
+        """)
+
+        with engine.connect() as conn:
+            for jour in dates["date_jour"]:
+                conn.execute(sql, {"date_jour": jour})
+                conn.commit()
+
+    - Mise à jour de la colonne buffer_10km, buffer_20km, buffer_50k
+
+        -> Création de vues matérialisées
+
+            ddl = [
+                """
+                CREATE MATERIALIZED VIEW mv_communes_voisines_10km AS 
+                SELECT 
+                    c1.id_commune AS ref_commune,
+                    c2.code_insee AS code_insee
+                FROM v_commune_paca c1
+                JOIN localisation l1 ON l1.id_localisation = c1.localisation
+                JOIN localisation l2 ON ST_DWithin(
+                    ST_Transform(l1.geom, 2154),
+                    ST_Transform(l2.geom, 2154),
+                    10000
+                )
+                JOIN commune c2 ON c2.localisation = l2.id_localisation
+                WHERE c2.id_commune != c1.id_commune;
+                """,
+                """
+                CREATE MATERIALIZED VIEW mv_communes_voisines_20km AS 
+                SELECT 
+                    c1.id_commune AS ref_commune,
+                    c2.code_insee AS code_insee
+                FROM v_commune_paca c1
+                JOIN localisation l1 ON l1.id_localisation = c1.localisation
+                JOIN localisation l2 ON ST_DWithin(
+                    ST_Transform(l1.geom, 2154),
+                    ST_Transform(l2.geom, 2154),
+                    20000
+                )
+                JOIN commune c2 ON c2.localisation = l2.id_localisation
+                WHERE c2.id_commune != c1.id_commune;
+                """,
+                """
+                CREATE MATERIALIZED VIEW mv_communes_voisines_50km AS 
+                SELECT 
+                    c1.id_commune AS ref_commune,
+                    c2.code_insee AS code_insee
+                FROM v_commune_paca c1
+                JOIN localisation l1 ON l1.id_localisation = c1.localisation
+                JOIN localisation l2 ON ST_DWithin(
+                    ST_Transform(l1.geom, 2154),
+                    ST_Transform(l2.geom, 2154),
+                    50000
+                )
+                JOIN commune c2 ON c2.localisation = l2.id_localisation
+                WHERE c2.id_commune != c1.id_commune;
+                """
+            ]
+
+            with engine.connect() as conn:
+                conn.execute(text("SET search_path TO incendies, public"))
+                for stmt in ddl:
+                    conn.execute(text(stmt))
+                    conn.commit()
+
+        -> Indexes
+
+            ddl = [
+                """
+                CREATE INDEX IF NOT EXISTS idx_mv_cv_ref_commune_10 
+                    ON mv_communes_voisines_10km(ref_commune);
+                """,
+                """
+                CREATE INDEX IF NOT EXISTS idx_mv_cv_code_insee_10 
+                    ON mv_communes_voisines_10km(code_insee);
+                """,
+                """
+                CREATE INDEX IF NOT EXISTS idx_mv_cv_ref_commune_20 
+                    ON mv_communes_voisines_20km(ref_commune);
+                """,
+                """
+                CREATE INDEX IF NOT EXISTS idx_mv_cv_code_insee_20 
+                    ON mv_communes_voisines_20km(code_insee);
+                """,
+                """
+                CREATE INDEX IF NOT EXISTS idx_mv_cv_ref_commune_50 
+                    ON mv_communes_voisines_50km(ref_commune);
+                """,
+                """
+                CREATE INDEX IF NOT EXISTS idx_mv_cv_code_insee_50 
+                    ON mv_communes_voisines_50km(code_insee);
+                """,
+            ]
+
+            with engine.connect() as conn:
+                conn.execute(text("SET search_path TO incendies, public"))
+                for stmt in ddl:
+                    conn.execute(text(stmt))
+                    conn.commit()
+
+        -> Buffers
+
+            sql = text("""
+            WITH calcul_incendies AS (
+                SELECT 
+                    v.ref_commune,
+                    COUNT(i.id_incendie) AS feux_du_jour
+                FROM mv_communes_voisines_10km v
+                LEFT JOIN incendie i ON i.code_insee = v.code_insee
+                    AND i.date_premiere_alerte >= (:date_jour - INTERVAL '30 day')
+                    AND i.date_premiere_alerte <  :date_jour 
+                GROUP BY v.ref_commune
+            )
+            UPDATE commune_jour cj
+            SET buffer_10km = COALESCE(calc.feux_du_jour, 0)
+            FROM v_commune_paca c
+            LEFT JOIN calcul_incendies calc ON c.id_commune = calc.ref_commune
+            WHERE cj.id_commune = c.id_commune
+                AND cj.date_jour  = :date_jour;
+            """)
+
+            with engine.connect() as conn:
+                for jour in dates["date_jour"]:
+                    conn.execute(sql, {"date_jour": jour})
+                    conn.commit()
+
+
+            sql = text("""
+            WITH calcul_incendies AS (
+                SELECT 
+                    v.ref_commune,
+                    COUNT(i.id_incendie) AS feux_du_jour
+                FROM mv_communes_voisines_20km v
+                LEFT JOIN incendie i ON i.code_insee = v.code_insee
+                    AND i.date_premiere_alerte >= (:date_jour - INTERVAL '30 day')
+                    AND i.date_premiere_alerte <  :date_jour 
+                GROUP BY v.ref_commune
+            )
+            UPDATE commune_jour cj
+            SET buffer_20km = COALESCE(calc.feux_du_jour, 0)
+            FROM v_commune_paca c
+            LEFT JOIN calcul_incendies calc ON c.id_commune = calc.ref_commune
+            WHERE cj.id_commune = c.id_commune
+                AND cj.date_jour  = :date_jour;
+            """)
+
+            with engine.connect() as conn:
+                for jour in dates["date_jour"]:
+                    conn.execute(sql, {"date_jour": jour})
+                    conn.commit()
+
+
+            sql = text("""
+            WITH calcul_incendies AS (
+                SELECT 
+                    v.ref_commune,
+                    COUNT(i.id_incendie) AS feux_du_jour
+                FROM mv_communes_voisines_50km v
+                LEFT JOIN incendie i ON i.code_insee = v.code_insee
+                    AND i.date_premiere_alerte >= (:date_jour - INTERVAL '30 day')
+                    AND i.date_premiere_alerte <  :date_jour 
+                GROUP BY v.ref_commune
+            )
+            UPDATE commune_jour cj
+            SET buffer_50km = COALESCE(calc.feux_du_jour, 0)
+            FROM v_commune_paca c
+            LEFT JOIN calcul_incendies calc ON c.id_commune = calc.ref_commune
+            WHERE cj.id_commune = c.id_commune
+                AND cj.date_jour  = :date_jour;
+            """)
+
+            with engine.connect() as conn:
+                for jour in dates["date_jour"]:
+                    conn.execute(sql, {"date_jour": jour})
+                    conn.commit()
+
+
+

@@ -1,1 +1,0 @@
-REFRESH MATERIALIZED VIEW incendies.mv_communes_voisines_50km
